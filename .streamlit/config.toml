@@ -1,0 +1,10 @@
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+
+[theme]
+primaryColor = "#E8450A"
+backgroundColor = "#0D0D0D"
+secondaryBackgroundColor = "#141414"
+textColor = "#F0F0F0"

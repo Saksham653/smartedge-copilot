@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: smartedge-copilot
+    env: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run smartedge_app.py --server.port $PORT --server.headless true --browser.gatherUsageStats false
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: MODEL
+        value: llama-3.1-8b-instant
+      - key: PROVIDER
+        value: openai
+    disk:
+      name: smartedge-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
