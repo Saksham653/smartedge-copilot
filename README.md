@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Saksham653/smartedge-copilot/main/assets/logo.png" width="120" alt="SmartEdge Copilot Logo" />
+<img src="[https://raw.githubusercontent.com/Saksham653/smartedge-copilot/main/assets/logo.png](https://github.com/user-attachments/assets/d25ff05d-666c-4b97-a891-c71435f879a2)" width="120" alt="SmartEdge Copilot Logo" />
 
 # ⚡ SmartEdge Copilot
 
