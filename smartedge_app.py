@@ -92,7 +92,9 @@ html, body, [data-testid="stAppViewContainer"] {
 }
 # Force-show sidebar and disable collapse handle to prevent getting stuck
 [data-testid="collapsedControl"] {
-    display: none !important;
+    display: flex !important;
+    visibility: visible !important;
+    z-index: 1001 !important;
 }
 # Ensure radio options (feature list) are visible in dark theme
 [data-testid="stSidebar"] .stRadio {
@@ -133,6 +135,23 @@ html, body, [data-testid="stAppViewContainer"] {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem; color: var(--text-lo);
     letter-spacing: 2px; margin-bottom: 1.2rem;
+}
+
+.app-brand {
+    display: flex; align-items: center; gap: 0.85rem;
+    background: var(--panel); border: 1px solid var(--border);
+    border-left: 4px solid var(--amd-red);
+    padding: 0.9rem 1.1rem; border-radius: 4px; margin-bottom: 1rem;
+}
+.app-brand img { width: 46px; height: 46px; border-radius: 8px; }
+.app-brand-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.4rem; font-weight: 700; letter-spacing: 2px;
+    color: var(--text-hi);
+}
+.app-brand-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem; color: var(--text-lo); letter-spacing: 2px;
 }
 
 .page-header {
@@ -226,6 +245,16 @@ html, body, [data-testid="stAppViewContainer"] {
 }
 hr { border-color: var(--border) !important; }
 </style>
+""", unsafe_allow_html=True)
+
+st.markdown(f"""
+<div class="app-brand">
+  <img src="data:image/jpeg;base64,{LOGO_B64}" alt="SmartEdge Copilot" />
+  <div>
+    <div class="app-brand-title">SmartEdge Copilot</div>
+    <div class="app-brand-sub">// AI RESEARCH · MEETINGS · TASKS · ANALYTICS</div>
+  </div>
+</div>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────
