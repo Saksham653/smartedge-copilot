@@ -80,6 +80,11 @@ def init_db() -> None:
                 action_items TEXT,
                 deadlines TEXT,
                 decisions TEXT,
+                recommendations TEXT,
+                risks TEXT,
+                sentiment TEXT,
+                speaker_stats TEXT,
+                followups TEXT,
                 total_tokens INTEGER,
                 latency_ms REAL,
                 cost REAL,
@@ -87,6 +92,19 @@ def init_db() -> None:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
+        cursor.execute("PRAGMA table_info(meeting_notes)")
+        existing_cols = {row[1] for row in cursor.fetchall()}
+        if "recommendations" not in existing_cols:
+            cursor.execute("ALTER TABLE meeting_notes ADD COLUMN recommendations TEXT")
+        if "risks" not in existing_cols:
+            cursor.execute("ALTER TABLE meeting_notes ADD COLUMN risks TEXT")
+        if "sentiment" not in existing_cols:
+            cursor.execute("ALTER TABLE meeting_notes ADD COLUMN sentiment TEXT")
+        if "speaker_stats" not in existing_cols:
+            cursor.execute("ALTER TABLE meeting_notes ADD COLUMN speaker_stats TEXT")
+        if "followups" not in existing_cols:
+            cursor.execute("ALTER TABLE meeting_notes ADD COLUMN followups TEXT")
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS tasks (

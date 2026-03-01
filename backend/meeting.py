@@ -10,6 +10,7 @@ from backend.optimizer import generate_optimized_prompt as optimize_prompt
 from backend.ai_wrapper import call_llm
 from backend.meeting_db import save_meeting_note
 from datetime import datetime
+import re
 
 
 # ---------------------------------------------------------------------------
@@ -37,10 +38,12 @@ List the main topics covered as bullet points (use "- " prefix for each item).
 ## Action Items
 List every action item as a bullet point in the format:
 - Person — Task
+If no explicit action items are stated, infer the most likely 2–4 action items from the discussion.
 
 ## Deadlines
 List every deadline mentioned as a bullet point in the format:
 - Task — YYYY-MM-DD
+If no explicit deadlines are stated, infer realistic target dates for any inferred action items.
 
 Rules:
 - Convert natural language dates (e.g., Friday, Monday, next week) into exact ISO format dates (YYYY-MM-DD).
@@ -49,6 +52,22 @@ Rules:
 
 ## Important Decisions
 Summarise every significant decision that was made or agreed upon.
+
+## Recommendations
+Provide 3–6 concrete recommendations to improve outcomes or execution.
+
+## Risks & Blockers
+List any risks, blockers, or unresolved questions. If none, write "None identified."
+
+## Sentiment & Tone
+Provide overall sentiment (Positive/Neutral/Negative) and 2–4 bullet reasons.
+
+## Speaker Contribution
+List speakers and their approximate contribution as bullet points in the format:
+- Speaker — % share — focus
+
+## Follow-up Questions
+List 3–6 specific follow-up questions to clarify gaps or decisions.
 
 Rules:
 - Use the exact section headers shown above.
@@ -93,6 +112,11 @@ def parse_meeting_output(text: str) -> dict:
         ("action_items", "Action Items"),
         ("deadlines",    "Deadlines"),
         ("decisions",    "Important Decisions"),
+        ("recommendations", "Recommendations"),
+        ("risks", "Risks & Blockers"),
+        ("sentiment", "Sentiment & Tone"),
+        ("speaker_stats", "Speaker Contribution"),
+        ("followups", "Follow-up Questions"),
     ]
 
     # Locate the character position of each header.
@@ -133,6 +157,31 @@ def parse_meeting_output(text: str) -> dict:
 # ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
+
+def _speaker_stats_from_transcript(transcript: str) -> str:
+    lines = transcript.splitlines()
+    counts = {}
+    word_counts = {}
+    for line in lines:
+        if ":" not in line:
+            continue
+        name, utterance = line.split(":", 1)
+        name = name.strip()
+        if not name:
+            continue
+        utterance = utterance.strip()
+        counts[name] = counts.get(name, 0) + 1
+        word_counts[name] = word_counts.get(name, 0) + len(utterance.split())
+    total_lines = sum(counts.values())
+    if total_lines == 0:
+        return ""
+    items = sorted(counts.items(), key=lambda x: (-x[1], x[0].lower()))
+    rows = []
+    for name, cnt in items:
+        share = int(round((cnt / total_lines) * 100))
+        words = word_counts.get(name, 0)
+        rows.append(f"- {name} — {share}% share — {words} words")
+    return "\n".join(rows)
 
 def generate_meeting_summary(title: str, transcript: str) -> dict:
     """
@@ -184,10 +233,18 @@ def generate_meeting_summary(title: str, transcript: str) -> dict:
     optimized_prompt = structured_prompt
 
     # STEP 4 — Call the LLM.
-    response = call_llm(optimized_prompt)
+    response = call_llm(
+        optimized_prompt,
+        feature_name="meeting",
+        temperature=0.2,
+        max_tokens=1400,
+    )
 
     # STEP 5 — Parse the structured response into sections.
     sections = parse_meeting_output(response["response_text"])
+    speaker_stats = _speaker_stats_from_transcript(transcript.strip())
+    if speaker_stats:
+        sections["speaker_stats"] = speaker_stats
 
     # STEP 6 — Persist the meeting note to the database.
     meeting_id = save_meeting_note(
@@ -198,6 +255,11 @@ def generate_meeting_summary(title: str, transcript: str) -> dict:
     action_items=sections["action_items"],
     deadlines=sections["deadlines"],
     decisions=sections["decisions"],
+    recommendations=sections["recommendations"],
+    risks=sections["risks"],
+    sentiment=sections["sentiment"],
+    speaker_stats=sections["speaker_stats"],
+    followups=sections["followups"],
     total_tokens=response["total_tokens"],
     latency_ms=response["latency_ms"],
     cost=response["cost"],
@@ -211,6 +273,11 @@ def generate_meeting_summary(title: str, transcript: str) -> dict:
         "action_items": sections["action_items"],
         "deadlines":    sections["deadlines"],
         "decisions":    sections["decisions"],
+        "recommendations": sections["recommendations"],
+        "risks": sections["risks"],
+        "sentiment": sections["sentiment"],
+        "speaker_stats": sections["speaker_stats"],
+        "followups": sections["followups"],
         "metrics": {
             "total_tokens": response["total_tokens"],
             "latency_ms":   response["latency_ms"],

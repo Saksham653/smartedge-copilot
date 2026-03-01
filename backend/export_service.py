@@ -82,7 +82,8 @@ Created: {_safe_str(row["created_at"])}
         else:
             cursor.execute("""
                 SELECT title, summary, key_topics, action_items,
-                       deadlines, decisions, created_at
+                       deadlines, decisions, recommendations, risks, sentiment,
+                       speaker_stats, followups, created_at
                 FROM meeting_notes
                 WHERE id = ?
             """, (note_id,))
@@ -115,6 +116,21 @@ Created: {_safe_str(row["created_at"])}
 
 ## Decisions
 {_safe_str(row["decisions"])}
+
+## Recommendations
+{_safe_str(row["recommendations"])}
+
+## Risks & Blockers
+{_safe_str(row["risks"])}
+
+## Sentiment & Tone
+{_safe_str(row["sentiment"])}
+
+## Speaker Contribution
+{_safe_str(row["speaker_stats"])}
+
+## Follow-up Questions
+{_safe_str(row["followups"])}
 """
 
     return textwrap.dedent(markdown_content).strip()

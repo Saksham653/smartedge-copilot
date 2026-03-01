@@ -29,7 +29,7 @@ init_db()
 from backend.research import generate_research, answer_followup
 from backend.research_db import search_research_notes
 from backend.meeting import generate_meeting_summary
-from backend.meeting_db import save_meeting_note
+from backend.meeting_db import save_meeting_note, list_meeting_notes, list_tasks_for_meeting
 from backend.tasks import list_tasks, update_task_status, create_tasks_from_meeting
 from backend.knowledge_hub import search_knowledge_hub
 from backend.analytics_service import (
@@ -608,6 +608,16 @@ elif "Meeting" in page:
                                 </div>""", unsafe_allow_html=True)
                         st.markdown('</div>', unsafe_allow_html=True)
 
+                    col_r1, col_r2 = st.columns(2)
+                    with col_r1:
+                        st.markdown('<div class="panel"><div class="panel-title">🧭 Recommendations</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="font-size:0.85rem;color:#CCC;line-height:1.7;white-space:pre-wrap;">{result.get("recommendations","")}</div>', unsafe_allow_html=True)
+                        st.markdown('</div>', unsafe_allow_html=True)
+                    with col_r2:
+                        st.markdown('<div class="panel"><div class="panel-title">⚠️ Risks & Blockers</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="font-size:0.85rem;color:#CCC;line-height:1.7;white-space:pre-wrap;">{result.get("risks","")}</div>', unsafe_allow_html=True)
+                        st.markdown('</div>', unsafe_allow_html=True)
+
                     col_t, col_d = st.columns(2)
                     with col_t:
                         st.markdown('<div class="panel"><div class="panel-title">🗂️ Key Topics</div>', unsafe_allow_html=True)
@@ -616,6 +626,33 @@ elif "Meeting" in page:
                     with col_d:
                         st.markdown('<div class="panel"><div class="panel-title">📅 Deadlines</div>', unsafe_allow_html=True)
                         st.markdown(f'<div style="font-size:0.85rem;color:#CCC;line-height:1.7;white-space:pre-wrap;">{result.get("deadlines","")}</div>', unsafe_allow_html=True)
+                        st.markdown('</div>', unsafe_allow_html=True)
+
+                    col_s1, col_s2 = st.columns(2)
+                    with col_s1:
+                        st.markdown('<div class="panel"><div class="panel-title">💬 Sentiment & Tone</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="font-size:0.85rem;color:#CCC;line-height:1.7;white-space:pre-wrap;">{result.get("sentiment","")}</div>', unsafe_allow_html=True)
+                        st.markdown('</div>', unsafe_allow_html=True)
+                    with col_s2:
+                        st.markdown('<div class="panel"><div class="panel-title">👥 Speaker Contribution</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="font-size:0.85rem;color:#CCC;line-height:1.7;white-space:pre-wrap;">{result.get("speaker_stats","")}</div>', unsafe_allow_html=True)
+                        st.markdown('</div>', unsafe_allow_html=True)
+
+                    st.markdown('<div class="panel"><div class="panel-title">❓ Follow-up Questions</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="font-size:0.85rem;color:#CCC;line-height:1.7;white-space:pre-wrap;">{result.get("followups","")}</div>', unsafe_allow_html=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+                    suggestions = []
+                    if not result.get("action_items") or "none identified" in result.get("action_items","").lower():
+                        suggestions.append("Capture clear owners and action items for each decision.")
+                    if not result.get("deadlines") or "none identified" in result.get("deadlines","").lower():
+                        suggestions.append("Add concrete deadlines to keep momentum and accountability.")
+                    if not result.get("decisions") or "none identified" in result.get("decisions","").lower():
+                        suggestions.append("Summarize decisions explicitly to avoid ambiguity.")
+                    if suggestions:
+                        st.markdown('<div class="panel"><div class="panel-title">✨ Smart Suggestions</div>', unsafe_allow_html=True)
+                        for s in suggestions:
+                            st.markdown(f"- {s}")
                         st.markdown('</div>', unsafe_allow_html=True)
 
                     m = result["metrics"]
@@ -636,23 +673,32 @@ elif "Meeting" in page:
             </div>""", unsafe_allow_html=True)
 
     with tab_hist:
-        st.info("Meeting history pulled from tasks table. Use the Tasks page to view auto-extracted tasks.")
-        tasks_all = list_tasks()
-        meeting_tasks = [t for t in tasks_all if t[1] == "meeting"] if tasks_all else []
-        if meeting_tasks:
-            st.markdown(f"**{len(meeting_tasks)} tasks extracted from meetings:**")
-            for t in meeting_tasks[:10]:
-                # row: (id, source_type, source_id, assignee, task_description, deadline, status, created_at)
-                st.markdown(f"""
-                <div class="result-item">
-                    <div class="result-title">{t[4]}</div>
-                    <div class="result-meta">
-                        Assignee: {t[3] or 'Unassigned'} · Deadline: {t[5] or 'None'} · Meeting #{t[2]}
-                    </div>
-                    <span class="badge {'green' if t[6]=='done' else ''}">{t[6].upper()}</span>
-                </div>""", unsafe_allow_html=True)
+        notes = list_meeting_notes()
+        if notes:
+            for n in notes:
+                (mid, title, summary, key_topics, action_items, deadlines, decisions,
+                 recommendations, risks, sentiment, speaker_stats, followups,
+                 created_at, model, total_tokens, latency_ms, cost) = n
+                with st.expander(f"🎙️ {title or f'Meeting #{mid}'}  —  {created_at[:16]}"):
+                    st.markdown(f"**Summary:** {summary}")
+                    st.markdown(f"**Key Topics:** {key_topics}")
+                    st.markdown(f"**Action Items:** {action_items}")
+                    st.markdown(f"**Deadlines:** {deadlines}")
+                    st.markdown(f"**Decisions:** {decisions}")
+                    st.markdown(f"**Recommendations:** {recommendations}")
+                    st.markdown(f"**Risks & Blockers:** {risks}")
+                    st.markdown(f"**Sentiment & Tone:** {sentiment}")
+                    st.markdown(f"**Speaker Contribution:** {speaker_stats}")
+                    st.markdown(f"**Follow-up Questions:** {followups}")
+                    st.caption(f"Model: {model} · {total_tokens:,} tokens · ${cost:.6f} · {latency_ms:.0f}ms")
+                    tasks_for_meeting = list_tasks_for_meeting(mid)
+                    if tasks_for_meeting:
+                        st.markdown("**Tasks**")
+                        for t in tasks_for_meeting:
+                            tid, assignee, desc, deadline, status, created = t
+                            st.markdown(f"- {desc} · {assignee or 'Unassigned'} · {deadline or 'None'} · {status}")
         else:
-            st.markdown('<div class="panel" style="text-align:center;padding:2rem;"><div style="color:#444;font-family:Rajdhani,sans-serif;letter-spacing:2px;">NO MEETING TASKS YET</div></div>', unsafe_allow_html=True)
+            st.markdown('<div class="panel" style="text-align:center;padding:2rem;"><div style="color:#444;font-family:Rajdhani,sans-serif;letter-spacing:2px;">NO MEETING HISTORY YET</div></div>', unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────

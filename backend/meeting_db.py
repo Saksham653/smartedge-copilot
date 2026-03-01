@@ -19,6 +19,11 @@ def save_meeting_note(
     action_items: str,
     deadlines: str,
     decisions: str,
+    recommendations: str,
+    risks: str,
+    sentiment: str,
+    speaker_stats: str,
+    followups: str,
     total_tokens: int,
     latency_ms: float,
     cost: float,
@@ -51,11 +56,16 @@ def save_meeting_note(
                 action_items,
                 deadlines,
                 decisions,
+                recommendations,
+                risks,
+                sentiment,
+                speaker_stats,
+                followups,
                 total_tokens,
                 latency_ms,
                 cost,
                 model
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 title,
@@ -65,6 +75,11 @@ def save_meeting_note(
                 action_items,
                 deadlines,
                 decisions,
+                recommendations,
+                risks,
+                sentiment,
+                speaker_stats,
+                followups,
                 total_tokens,
                 latency_ms,
                 cost,
@@ -113,5 +128,41 @@ def save_meeting_note(
         conn.commit()
         return meeting_id
 
+    finally:
+        conn.close()
+
+
+def list_meeting_notes(limit: int = 50):
+    conn = get_connection()
+    try:
+        cursor = conn.execute(
+            """
+            SELECT id, title, summary, key_topics, action_items, deadlines, decisions,
+                   recommendations, risks, sentiment, speaker_stats, followups,
+                   created_at, model, total_tokens, latency_ms, cost
+            FROM meeting_notes
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        return cursor.fetchall()
+    finally:
+        conn.close()
+
+
+def list_tasks_for_meeting(meeting_id: int):
+    conn = get_connection()
+    try:
+        cursor = conn.execute(
+            """
+            SELECT id, assignee, task_description, deadline, status, created_at
+            FROM tasks
+            WHERE source_type = 'meeting' AND source_id = ?
+            ORDER BY created_at DESC
+            """,
+            (meeting_id,),
+        )
+        return cursor.fetchall()
     finally:
         conn.close()
