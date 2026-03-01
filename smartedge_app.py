@@ -30,7 +30,7 @@ from backend.research import generate_research, answer_followup
 from backend.research_db import search_research_notes
 from backend.meeting import generate_meeting_summary
 from backend.meeting_db import save_meeting_note, list_meeting_notes, list_tasks_for_meeting
-from backend.tasks import list_tasks, update_task_status, create_tasks_from_meeting
+from backend.tasks import list_tasks, update_task_status, create_tasks_from_meeting, create_task, get_due_soon
 from backend.knowledge_hub import search_knowledge_hub
 from backend.analytics_service import (
     get_feature_summary,
@@ -707,6 +707,28 @@ elif "Meeting" in page:
 elif "Task" in page:
     st.markdown('<div class="page-header">TASK MANAGEMENT</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-sub">// AUTO-EXTRACTED FROM MEETINGS · REAL-TIME DB</div>', unsafe_allow_html=True)
+
+    with st.form("task_add_form", clear_on_submit=True):
+        c1, c2, c3 = st.columns([3, 2, 1])
+        with c1:
+            new_desc = st.text_input("", placeholder="Task description", key="task_desc")
+        with c2:
+            new_assignee = st.text_input("", placeholder="Assignee (optional)", key="task_assignee")
+        with c3:
+            new_deadline = st.text_input("", placeholder="YYYY-MM-DD", key="task_deadline")
+        submitted = st.form_submit_button("ADD TASK")
+        if submitted and new_desc.strip():
+            create_task(new_assignee, new_desc, new_deadline)
+            st.success("Task added.")
+            st.rerun()
+
+    due_soon = get_due_soon(7)
+    if due_soon:
+        st.markdown('<div class="panel"><div class="panel-title">⏰ Due Soon (7 days)</div>', unsafe_allow_html=True)
+        for t in due_soon[:5]:
+            tid, src_type, src_id, assignee, desc, deadline, status, created = t
+            st.markdown(f"- {desc} · {assignee or 'Unassigned'} · {deadline}")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     status_filter = st.selectbox("Filter by status", ["all", "pending", "done", "cancelled"], index=0)
     tasks = list_tasks(None if status_filter == "all" else status_filter)

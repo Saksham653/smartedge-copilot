@@ -154,6 +154,37 @@ def create_tasks_from_meeting(source_id: int, action_items_text: str, deadlines_
     finally:
         conn.close()
         
+def create_task(assignee: str, task_description: str, deadline: str = "", source_type: str = "manual", source_id: int | None = None) -> int:
+    if not task_description or not task_description.strip():
+        raise ValueError("task_description must be a non-empty string.")
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO tasks (
+                source_type,
+                source_id,
+                assignee,
+                task_description,
+                deadline,
+                status
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                source_type,
+                source_id,
+                (assignee or "").strip(),
+                task_description.strip(),
+                (deadline or "").strip(),
+                "pending",
+            ),
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()
+
 def update_task_status(task_id: int, new_status: str) -> None:
     conn = get_connection()
     try:
