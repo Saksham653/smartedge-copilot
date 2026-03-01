@@ -274,8 +274,11 @@ def _set_page_from_select():
 # CHART DEFAULTS
 # ─────────────────────────────────────────────────────────────────
 CL = dict(
+    template="plotly_dark",
     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
     font=dict(family="JetBrains Mono", color="#888"),
+    colorway=["#E8450A", "#F5841F", "#00BFFF", "#00FF88", "#FF6B35", "#FF9050"],
+    hoverlabel=dict(bgcolor="#141414", font=dict(color="#EDEDED", family="JetBrains Mono")),
     margin=dict(l=10, r=10, t=30, b=10),
     xaxis=dict(gridcolor="#1E1E1E", zerolinecolor="#1E1E1E"),
     yaxis=dict(gridcolor="#1E1E1E", zerolinecolor="#1E1E1E"),
@@ -402,7 +405,7 @@ if "Dashboard" in page:
                 xaxis_title="Tokens per run",
                 yaxis_title="Avg latency (ms)",
             )
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col_r:
@@ -417,7 +420,7 @@ if "Dashboard" in page:
             ))
             fig2.update_layout(**CL, height=260, showlegend=True,
                                legend=dict(font=dict(size=9), orientation="v"))
-            st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig2, width="stretch", config={"displayModeBar": False})
             st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.markdown("""
@@ -486,7 +489,7 @@ if "Dashboard" in page:
             },
         ))
         fig3.update_layout(**CL, height=220)
-        st.plotly_chart(fig3, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig3, width="stretch", config={"displayModeBar": False})
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Feature breakdown table
@@ -1048,7 +1051,7 @@ elif "Analytics" in page:
                 ),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
             )
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col_r:
@@ -1061,7 +1064,7 @@ elif "Analytics" in page:
                 marker_color="#F5841F",
             ))
             fig2.update_layout(**CL, height=260, xaxis_title="Total tokens", yaxis_title="")
-            st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig2, width="stretch", config={"displayModeBar": False})
             st.markdown('</div>', unsafe_allow_html=True)
 
     if time_data:
@@ -1078,7 +1081,7 @@ elif "Analytics" in page:
                 fill="tozeroy", fillcolor="rgba(232,69,10,0.07)",
             ))
             fig.update_layout(**CL, height=240)
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col_r:
@@ -1092,7 +1095,7 @@ elif "Analytics" in page:
                 fill="tozeroy", fillcolor="rgba(245,132,31,0.07)",
             ))
             fig2.update_layout(**CL, height=240)
-            st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig2, width="stretch", config={"displayModeBar": False})
             st.markdown('</div>', unsafe_allow_html=True)
 
     if summary:
