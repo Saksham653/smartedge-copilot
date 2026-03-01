@@ -302,6 +302,14 @@ if "Dashboard" in page:
     totals = get_overall_totals()
     summary = get_feature_summary()
     insights = generate_performance_insights()
+    feature_names = {
+        "research": "Research",
+        "meeting": "Meeting",
+        "optimizer": "Prompt Optimizer",
+        "research_followup": "Research Follow-up",
+    }
+    def _feature_label(key: str) -> str:
+        return feature_names.get(key, key.replace("_", " ").title())
 
     c1, c2, c3, c4 = st.columns(4)
     kpis = [
@@ -341,9 +349,10 @@ if "Dashboard" in page:
         with col_r:
             if summary:
                 st.markdown('<div class="panel"><div class="panel-title">Runs by Feature</div>', unsafe_allow_html=True)
+                sorted_items = sorted(summary.items(), key=lambda kv: kv[1]["total_runs"], reverse=True)
                 fig2 = go.Figure(go.Pie(
-                    labels=list(summary.keys()),
-                    values=[v["total_runs"] for v in summary.values()],
+                    labels=[_feature_label(k) for k, _ in sorted_items],
+                    values=[v["total_runs"] for _, v in sorted_items],
                     hole=0.55,
                     marker=dict(colors=["#E8450A","#F5841F","#FF6B35","#FF9050","#FFAA70"]),
                     textfont=dict(family="JetBrains Mono", size=9),
@@ -368,7 +377,7 @@ if "Dashboard" in page:
         for feat, data in eff.items():
             st.markdown(f"""
             <div class="result-item">
-                <div class="result-title">{feat.upper()}</div>
+                <div class="result-title">{_feature_label(feat).upper()}</div>
                 <div class="result-meta">
                     Cost/1K tokens: ${data['cost_per_1k_tokens']:.6f} &nbsp;·&nbsp;
                     Avg cost/run: ${data['avg_cost_per_run']:.6f}
@@ -376,8 +385,8 @@ if "Dashboard" in page:
             </div>""", unsafe_allow_html=True)
         st.markdown(f"""
         <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:#888;margin-top:0.5rem;">
-            Most expensive: <span style="color:#E8450A;">{insights.get('most_expensive_feature','—')}</span>
-            &nbsp;·&nbsp; Slowest: <span style="color:#F5841F;">{insights.get('slowest_feature','—')}</span>
+            Most expensive: <span style="color:#E8450A;">{_feature_label(insights.get('most_expensive_feature','—'))}</span>
+            &nbsp;·&nbsp; Slowest: <span style="color:#F5841F;">{_feature_label(insights.get('slowest_feature','—'))}</span>
         </div>""", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -387,7 +396,7 @@ if "Dashboard" in page:
         for feat, data in summary.items():
             st.markdown(f"""
             <div style="display:flex;justify-content:space-between;padding:0.45rem 0;border-bottom:1px solid #1A1A1A;">
-                <span style="font-family:'Rajdhani',sans-serif;font-size:0.95rem;color:#CCC;">{feat.upper()}</span>
+                <span style="font-family:'Rajdhani',sans-serif;font-size:0.95rem;color:#CCC;">{_feature_label(feat).upper()}</span>
                 <span style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:#888;">
                     {data['total_runs']} runs &nbsp;·&nbsp;
                     {data['total_tokens']:,} tokens &nbsp;·&nbsp;
