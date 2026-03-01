@@ -356,40 +356,69 @@ if "Dashboard" in page:
                 <div class="metric-delta">{sub}</div>
             </div>""", unsafe_allow_html=True)
 
-    # Usage over time chart
-    time_data = get_usage_over_time()
-    if time_data:
+    if summary:
         col_l, col_r = st.columns([3, 2])
         with col_l:
-            st.markdown('<div class="panel"><div class="panel-title">Token Usage Over Time</div>', unsafe_allow_html=True)
+            st.markdown('<div class="panel"><div class="panel-title">AI Feature Footprint</div>', unsafe_allow_html=True)
+            feature_keys = list(summary.keys())
+            labels = [_feature_label(k) for k in feature_keys]
+            total_runs = [summary[k]["total_runs"] for k in feature_keys]
+            total_tokens = [summary[k]["total_tokens"] for k in feature_keys]
+            total_cost = [summary[k]["total_cost"] for k in feature_keys]
+            avg_latency = [summary[k]["avg_latency_ms"] for k in feature_keys]
+            tokens_per_run = [
+                (total_tokens[i] / total_runs[i]) if total_runs[i] else 0
+                for i in range(len(feature_keys))
+            ]
+            max_runs = max(total_runs) if total_runs else 1
+            sizes = [12 + (r / max_runs) * 28 for r in total_runs]
+            colors = ["#E8450A", "#F5841F", "#00BFFF", "#00FF88", "#FF6B35", "#FF9050"]
             fig = go.Figure()
             fig.add_trace(go.Scatter(
-                x=[d["date"] for d in time_data],
-                y=[d["total_tokens"] for d in time_data],
-                mode="lines+markers",
-                line=dict(color="#E8450A", width=2),
-                marker=dict(color="#F5841F", size=6),
-                fill="tozeroy", fillcolor="rgba(232,69,10,0.07)",
+                x=tokens_per_run,
+                y=avg_latency,
+                mode="markers+text",
+                text=labels,
+                textposition="top center",
+                marker=dict(
+                    size=sizes,
+                    color=colors[:len(labels)],
+                    line=dict(color="#1E1E1E", width=1),
+                    opacity=0.9,
+                ),
+                customdata=list(zip(total_runs, total_tokens, total_cost)),
+                hovertemplate=(
+                    "<b>%{text}</b><br>"
+                    "Tokens/run: %{x:.0f}<br>"
+                    "Avg latency: %{y:.0f} ms<br>"
+                    "Total runs: %{customdata[0]:,}<br>"
+                    "Total tokens: %{customdata[1]:,}<br>"
+                    "Total cost: $%{customdata[2]:.5f}<extra></extra>"
+                ),
             ))
-            fig.update_layout(**CL, height=220)
+            fig.update_layout(
+                **CL,
+                height=260,
+                xaxis_title="Tokens per run",
+                yaxis_title="Avg latency (ms)",
+            )
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col_r:
-            if summary:
-                st.markdown('<div class="panel"><div class="panel-title">Runs by Feature</div>', unsafe_allow_html=True)
-                sorted_items = sorted(summary.items(), key=lambda kv: kv[1]["total_runs"], reverse=True)
-                fig2 = go.Figure(go.Pie(
-                    labels=[_feature_label(k) for k, _ in sorted_items],
-                    values=[v["total_runs"] for _, v in sorted_items],
-                    hole=0.55,
-                    marker=dict(colors=["#E8450A","#F5841F","#FF6B35","#FF9050","#FFAA70"]),
-                    textfont=dict(family="JetBrains Mono", size=9),
-                ))
-                fig2.update_layout(**CL, height=220, showlegend=True,
-                                   legend=dict(font=dict(size=9), orientation="v"))
-                st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
-                st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('<div class="panel"><div class="panel-title">Runs by Feature</div>', unsafe_allow_html=True)
+            sorted_items = sorted(summary.items(), key=lambda kv: kv[1]["total_runs"], reverse=True)
+            fig2 = go.Figure(go.Pie(
+                labels=[_feature_label(k) for k, _ in sorted_items],
+                values=[v["total_runs"] for _, v in sorted_items],
+                hole=0.55,
+                marker=dict(colors=["#E8450A","#F5841F","#FF6B35","#FF9050","#FFAA70"]),
+                textfont=dict(family="JetBrains Mono", size=9),
+            ))
+            fig2.update_layout(**CL, height=260, showlegend=True,
+                               legend=dict(font=dict(size=9), orientation="v"))
+            st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+            st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.markdown("""
         <div class="panel" style="text-align:center;padding:2.5rem;">
@@ -417,6 +446,47 @@ if "Dashboard" in page:
             Most expensive: <span style="color:#E8450A;">{_feature_label(insights.get('most_expensive_feature','—'))}</span>
             &nbsp;·&nbsp; Slowest: <span style="color:#F5841F;">{_feature_label(insights.get('slowest_feature','—'))}</span>
         </div>""", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    if summary:
+        feature_keys = list(summary.keys())
+        total_runs = [summary[k]["total_runs"] for k in feature_keys]
+        total_tokens = [summary[k]["total_tokens"] for k in feature_keys]
+        avg_latency = [summary[k]["avg_latency_ms"] for k in feature_keys]
+        tokens_per_run = [
+            (total_tokens[i] / total_runs[i]) if total_runs[i] else 0
+            for i in range(len(feature_keys))
+        ]
+        sum_runs = sum(total_runs) if total_runs else 0
+        avg_tokens_per_run = (sum(total_tokens) / sum_runs) if sum_runs else 0
+        avg_latency_overall = (
+            sum(avg_latency[i] * total_runs[i] for i in range(len(feature_keys))) / sum_runs
+            if sum_runs else 0
+        )
+        max_tokens_per_run = max(tokens_per_run) if tokens_per_run else 1
+        max_latency = max(avg_latency) if avg_latency else 1
+        token_score = 1 - (avg_tokens_per_run / max_tokens_per_run) if max_tokens_per_run else 1
+        latency_score = 1 - (avg_latency_overall / max_latency) if max_latency else 1
+        efficiency_score = max(0, min(1, (token_score + latency_score) / 2)) * 100
+
+        st.markdown('<div class="panel"><div class="panel-title">AI Efficiency Index</div>', unsafe_allow_html=True)
+        fig3 = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=efficiency_score,
+            number={"suffix": "/100", "font": {"size": 36}},
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": "#E8450A"},
+                "bgcolor": "rgba(0,0,0,0)",
+                "steps": [
+                    {"range": [0, 40], "color": "rgba(232,69,10,0.15)"},
+                    {"range": [40, 70], "color": "rgba(245,132,31,0.18)"},
+                    {"range": [70, 100], "color": "rgba(0,255,136,0.2)"},
+                ],
+            },
+        ))
+        fig3.update_layout(**CL, height=220)
+        st.plotly_chart(fig3, use_container_width=True, config={"displayModeBar": False})
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Feature breakdown table
@@ -935,15 +1005,77 @@ elif "Analytics" in page:
                 <div class="metric-value">{val}</div>
             </div>""", unsafe_allow_html=True)
 
+    if summary:
+        feature_keys = list(summary.keys())
+        labels = [f.replace("_", " ").title() for f in feature_keys]
+        total_runs = [summary[k]["total_runs"] for k in feature_keys]
+        total_tokens = [summary[k]["total_tokens"] for k in feature_keys]
+        avg_latency = [summary[k]["avg_latency_ms"] for k in feature_keys]
+        tokens_per_run = [
+            (total_tokens[i] / total_runs[i]) if total_runs[i] else 0
+            for i in range(len(feature_keys))
+        ]
+
+        col_l, col_r = st.columns(2)
+        with col_l:
+            st.markdown('<div class="panel"><div class="panel-title">Tokens vs Latency by Feature</div>', unsafe_allow_html=True)
+            fig = go.Figure()
+            fig.add_trace(go.Bar(
+                x=labels,
+                y=tokens_per_run,
+                name="Tokens / Run",
+                marker_color="#E8450A",
+                yaxis="y1",
+            ))
+            fig.add_trace(go.Scatter(
+                x=labels,
+                y=avg_latency,
+                name="Avg Latency (ms)",
+                mode="lines+markers",
+                line=dict(color="#00BFFF", width=2),
+                marker=dict(size=7),
+                yaxis="y2",
+            ))
+            fig.update_layout(
+                **CL,
+                height=260,
+                yaxis=dict(title="Tokens per run"),
+                yaxis2=dict(
+                    title="Avg latency (ms)",
+                    overlaying="y",
+                    side="right",
+                    showgrid=False,
+                ),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            )
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_r:
+            st.markdown('<div class="panel"><div class="panel-title">Token Share by Feature</div>', unsafe_allow_html=True)
+            ordered = sorted(zip(labels, total_tokens), key=lambda x: x[1], reverse=True)
+            fig2 = go.Figure(go.Bar(
+                x=[t for _, t in ordered],
+                y=[l for l, _ in ordered],
+                orientation="h",
+                marker_color="#F5841F",
+            ))
+            fig2.update_layout(**CL, height=260, xaxis_title="Total tokens", yaxis_title="")
+            st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+            st.markdown('</div>', unsafe_allow_html=True)
+
     if time_data:
         col_l, col_r = st.columns([3, 2])
         with col_l:
             st.markdown('<div class="panel"><div class="panel-title">Token Usage Over Time</div>', unsafe_allow_html=True)
             fig = go.Figure()
-            fig.add_trace(go.Bar(
+            fig.add_trace(go.Scatter(
                 x=[d["date"] for d in time_data],
                 y=[d["total_tokens"] for d in time_data],
-                marker_color="#E8450A",
+                mode="lines+markers",
+                line=dict(color="#E8450A", width=2),
+                marker=dict(color="#F5841F", size=6),
+                fill="tozeroy", fillcolor="rgba(232,69,10,0.07)",
             ))
             fig.update_layout(**CL, height=240)
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
