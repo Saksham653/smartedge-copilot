@@ -12,8 +12,11 @@
 [![Groq](https://img.shields.io/badge/Groq-LLM%20Backend-F55036?style=for-the-badge)](https://groq.com)
 [![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-smartedge--copilot-00C851?style=for-the-badge&logo=render&logoColor=white)](https://smartedge-copilot.onrender.com/)
 
 **SmartEdge Copilot** transforms raw AI outputs into structured, persistent, and measurable intelligence — featuring research automation, meeting summarization, task extraction, unified knowledge search, and real-time analytics. All in a sleek dark dashboard.
+
+🌐 **[Live Demo → smartedge-copilot.onrender.com](https://smartedge-copilot.onrender.com/)**
 
 [Features](#-features) • [Architecture](#-architecture) • [Quick Start](#-quick-start) • [Usage](#-usage) • [API Docs](#-backend-api) • [Team](#-team)
 
@@ -159,6 +162,16 @@ meeting_notes   (id, title, transcript, summary, key_topics, action_items,
 tasks           (id, source_type, source_id, assignee, task_description,
                  deadline, status, created_at)
 ```
+
+---
+
+## 🌐 Live Demo
+
+> **Try it now → [https://smartedge-copilot.onrender.com](https://smartedge-copilot.onrender.com/)**
+
+The app is deployed and live on Render. No installation needed — just open the link and start using it.
+
+> ⚠️ **Note:** The app may take **30–60 seconds to wake up** on first load since it runs on Render's free tier (spins down when inactive). Just wait a moment and it'll be ready!
 
 ---
 
