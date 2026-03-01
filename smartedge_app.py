@@ -377,33 +377,34 @@ if "Dashboard" in page:
             sizes = [12 + (r / max_runs) * 28 for r in total_runs]
             colors = ["#E8450A", "#F5841F", "#00BFFF", "#00FF88", "#FF6B35", "#FF9050"]
             fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=tokens_per_run,
-                y=avg_latency,
-                mode="markers+text",
-                text=labels,
-                textposition="top center",
-                marker=dict(
-                    size=sizes,
-                    color=colors[:len(labels)],
-                    line=dict(color="#1E1E1E", width=1),
-                    opacity=0.9,
-                ),
-                customdata=list(zip(total_runs, total_tokens, total_cost)),
-                hovertemplate=(
-                    "<b>%{text}</b><br>"
-                    "Tokens/run: %{x:.0f}<br>"
-                    "Avg latency: %{y:.0f} ms<br>"
-                    "Total runs: %{customdata[0]:,}<br>"
-                    "Total tokens: %{customdata[1]:,}<br>"
-                    "Total cost: $%{customdata[2]:.5f}<extra></extra>"
-                ),
-            ))
+            for i, label in enumerate(labels):
+                fig.add_trace(go.Scatter(
+                    x=[tokens_per_run[i]],
+                    y=[avg_latency[i]],
+                    mode="markers",
+                    name=label,
+                    marker=dict(
+                        size=sizes[i],
+                        color=colors[i % len(colors)],
+                        line=dict(color="#1E1E1E", width=1),
+                        opacity=0.9,
+                    ),
+                    customdata=[(total_runs[i], total_tokens[i], total_cost[i])],
+                    hovertemplate=(
+                        "<b>%{fullData.name}</b><br>"
+                        "Tokens/run: %{x:.0f}<br>"
+                        "Avg latency: %{y:.0f} ms<br>"
+                        "Total runs: %{customdata[0]:,}<br>"
+                        "Total tokens: %{customdata[1]:,}<br>"
+                        "Total cost: $%{customdata[2]:.5f}<extra></extra>"
+                    ),
+                ))
             fig.update_layout(
                 **CL,
                 height=260,
                 xaxis_title="Tokens per run",
                 yaxis_title="Avg latency (ms)",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
             )
             st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
             st.markdown('</div>', unsafe_allow_html=True)
@@ -1039,10 +1040,12 @@ elif "Analytics" in page:
                 marker=dict(size=7),
                 yaxis="y2",
             ))
+            layout_base = {k: v for k, v in CL.items() if k not in ("yaxis", "xaxis")}
             fig.update_layout(
-                **CL,
+                **layout_base,
                 height=260,
-                yaxis=dict(title="Tokens per run"),
+                xaxis=dict(gridcolor="#1E1E1E", zerolinecolor="#1E1E1E"),
+                yaxis=dict(title="Tokens per run", gridcolor="#1E1E1E", zerolinecolor="#1E1E1E"),
                 yaxis2=dict(
                     title="Avg latency (ms)",
                     overlaying="y",
